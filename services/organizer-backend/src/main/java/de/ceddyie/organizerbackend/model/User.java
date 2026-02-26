@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -21,4 +23,10 @@ public class User {
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "createdBy")
+    private Set<Group> createdGroups = new HashSet<>();
+
+    @OneToMany(mappedBy = "user")
+    private Set<GroupMember> groupMemberships = new HashSet<>();
 }
