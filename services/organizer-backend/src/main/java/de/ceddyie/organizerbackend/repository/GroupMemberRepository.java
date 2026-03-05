@@ -1,10 +1,9 @@
 package de.ceddyie.organizerbackend.repository;
 
-import de.ceddyie.organizerbackend.model.Group;
+import de.ceddyie.organizerbackend.model.GroupMember;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface GroupRepository extends JpaRepository<Group, Long> {
-    boolean existsByInviteCode(String code);
+public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> {
 }

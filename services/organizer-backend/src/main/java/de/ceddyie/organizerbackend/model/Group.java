@@ -2,12 +2,14 @@ package de.ceddyie.organizerbackend.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-@Data
+@Getter @Setter
 @Entity
 @Table(name = "groups")
 public class Group {
@@ -35,4 +37,18 @@ public class Group {
     public int getMemberCount() {
         return members != null ? members.size() : 0;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Group group = (Group) o;
+        return id != null && id.equals(group.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
 }

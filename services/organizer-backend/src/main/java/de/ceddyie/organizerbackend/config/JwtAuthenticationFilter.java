@@ -43,16 +43,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (discordId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             if (jwtUtil.validateToken(jwt)) {
-                UserDetails userDetails = User.builder()
-                        .username(discordId)
-                        .password("")
-                        .authorities(new ArrayList<>())
-                        .build();
+                Long userId = jwtUtil.extractUserId(jwt);
 
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
+                        userId,
                         null,
-                        userDetails.getAuthorities()
+                        new ArrayList<>()
                 );
 
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
