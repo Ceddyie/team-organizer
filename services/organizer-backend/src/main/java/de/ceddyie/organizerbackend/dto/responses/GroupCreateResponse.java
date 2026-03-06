@@ -1,5 +1,6 @@
-package de.ceddyie.organizerbackend.dto;
+package de.ceddyie.organizerbackend.dto.responses;
 
+import de.ceddyie.organizerbackend.dto.GroupCreatorDto;
 import de.ceddyie.organizerbackend.model.Group;
 
 import java.time.LocalDateTime;

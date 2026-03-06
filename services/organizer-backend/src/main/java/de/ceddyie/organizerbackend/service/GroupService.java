@@ -1,7 +1,8 @@
 package de.ceddyie.organizerbackend.service;
 
-import de.ceddyie.organizerbackend.dto.GroupCreateResponse;
+import de.ceddyie.organizerbackend.dto.responses.GroupCreateResponse;
 import de.ceddyie.organizerbackend.dto.GroupCreatorDto;
+import de.ceddyie.organizerbackend.dto.responses.GroupJoinResponse;
 import de.ceddyie.organizerbackend.model.Group;
 import de.ceddyie.organizerbackend.model.GroupMember;
 import de.ceddyie.organizerbackend.model.User;
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -43,9 +45,7 @@ public class GroupService {
     public ResponseEntity<?> createGroup(Long userId, String name) {
         Optional<User> user = userRepository.findById(userId);
 
-        if (user.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+        if (user.isEmpty()) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         User creator = user.get();
 
@@ -66,5 +66,26 @@ public class GroupService {
 
         GroupCreatorDto creatorDto = GroupCreatorDto.from(founderMember);
         return ResponseEntity.ok().body(GroupCreateResponse.from(newGroup, creatorDto));
+    }
+
+    public ResponseEntity<?> joinGroup(Long userId, String inviteCode) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isEmpty()) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        User user = userOptional.get();
+
+        Optional<Group> groupOptional = groupRepository.findByInviteCode(inviteCode);
+        if (groupOptional.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        Group group = groupOptional.get();
+
+        if (groupMemberRepository.existsByGroupAndUser(group, user)) return ResponseEntity.status(HttpStatus.CONFLICT).build();
+
+        GroupMember newMember = new GroupMember();
+        newMember.setGroup(group);
+        newMember.setUser(user);
+        newMember.setJoinedAt(LocalDateTime.now());
+
+        groupMemberRepository.save(newMember);
+
+        return ResponseEntity.ok().body(GroupJoinResponse.from(group, newMember));
     }
 }
