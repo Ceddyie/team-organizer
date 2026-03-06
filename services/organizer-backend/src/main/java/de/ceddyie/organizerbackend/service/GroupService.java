@@ -3,6 +3,7 @@ package de.ceddyie.organizerbackend.service;
 import de.ceddyie.organizerbackend.dto.responses.GroupCreateResponse;
 import de.ceddyie.organizerbackend.dto.GroupCreatorDto;
 import de.ceddyie.organizerbackend.dto.responses.GroupJoinResponse;
+import de.ceddyie.organizerbackend.dto.responses.GroupListResponseItem;
 import de.ceddyie.organizerbackend.exceptions.ConflictException;
 import de.ceddyie.organizerbackend.exceptions.ResourceNotFoundException;
 import de.ceddyie.organizerbackend.exceptions.UnauthorizedException;
@@ -14,11 +15,12 @@ import de.ceddyie.organizerbackend.repository.GroupRepository;
 import de.ceddyie.organizerbackend.repository.UserRepository;
 import de.ceddyie.organizerbackend.util.InviteCodeGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class GroupService {
@@ -83,5 +85,14 @@ public class GroupService {
         groupMemberRepository.save(newMember);
 
         return GroupJoinResponse.from(group, newMember);
+    }
+
+    public List<GroupListResponseItem> getGroups(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User is not logged in"));
+
+        return groupMemberRepository.findAllByUser(user).stream()
+                .map(gm -> GroupListResponseItem.from(gm.getGroup(), gm))
+                .toList();
     }
 }
