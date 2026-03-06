@@ -3,6 +3,9 @@ package de.ceddyie.organizerbackend.service;
 import de.ceddyie.organizerbackend.dto.responses.GroupCreateResponse;
 import de.ceddyie.organizerbackend.dto.GroupCreatorDto;
 import de.ceddyie.organizerbackend.dto.responses.GroupJoinResponse;
+import de.ceddyie.organizerbackend.exceptions.ConflictException;
+import de.ceddyie.organizerbackend.exceptions.ResourceNotFoundException;
+import de.ceddyie.organizerbackend.exceptions.UnauthorizedException;
 import de.ceddyie.organizerbackend.model.Group;
 import de.ceddyie.organizerbackend.model.GroupMember;
 import de.ceddyie.organizerbackend.model.User;
@@ -16,8 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 public class GroupService {
@@ -42,22 +43,19 @@ public class GroupService {
         );
     }
 
-    public ResponseEntity<?> createGroup(Long userId, String name) {
-        Optional<User> user = userRepository.findById(userId);
-
-        if (user.isEmpty()) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-
-        User creator = user.get();
+    public GroupCreateResponse createGroup(Long userId, String name) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User is not logged in"));
 
         Group newGroup = new Group();
         newGroup.setName(name);
-        newGroup.setCreatedBy(creator);
+        newGroup.setCreatedBy(user);
         newGroup.setCreatedAt(LocalDateTime.now());
         newGroup.setInviteCode(generateInviteCode());
 
         GroupMember founderMember = new GroupMember();
         founderMember.setGroup(newGroup);
-        founderMember.setUser(creator);
+        founderMember.setUser(user);
         founderMember.setJoinedAt(LocalDateTime.now());
 
         newGroup.getMembers().add(founderMember);
@@ -65,19 +63,17 @@ public class GroupService {
         groupRepository.save(newGroup);
 
         GroupCreatorDto creatorDto = GroupCreatorDto.from(founderMember);
-        return ResponseEntity.ok().body(GroupCreateResponse.from(newGroup, creatorDto));
+        return GroupCreateResponse.from(newGroup, creatorDto);
     }
 
-    public ResponseEntity<?> joinGroup(Long userId, String inviteCode) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        if (userOptional.isEmpty()) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        User user = userOptional.get();
+    public GroupJoinResponse joinGroup(Long userId, String inviteCode) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User is not logged in"));
 
-        Optional<Group> groupOptional = groupRepository.findByInviteCode(inviteCode);
-        if (groupOptional.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        Group group = groupOptional.get();
+        Group group = groupRepository.findByInviteCode(inviteCode)
+                .orElseThrow(() -> new ResourceNotFoundException("No group with Invite Code: " + inviteCode));
 
-        if (groupMemberRepository.existsByGroupAndUser(group, user)) return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        if (groupMemberRepository.existsByGroupAndUser(group, user)) throw new ConflictException("User " + userId + " is already member of group " + group.getId());
 
         GroupMember newMember = new GroupMember();
         newMember.setGroup(group);
@@ -86,6 +82,6 @@ public class GroupService {
 
         groupMemberRepository.save(newMember);
 
-        return ResponseEntity.ok().body(GroupJoinResponse.from(group, newMember));
+        return GroupJoinResponse.from(group, newMember);
     }
 }

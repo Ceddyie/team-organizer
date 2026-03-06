@@ -2,6 +2,8 @@ package de.ceddyie.organizerbackend.controller;
 
 import de.ceddyie.organizerbackend.dto.requests.GroupCreateRequest;
 import de.ceddyie.organizerbackend.dto.requests.GroupJoinRequest;
+import de.ceddyie.organizerbackend.dto.responses.GroupCreateResponse;
+import de.ceddyie.organizerbackend.dto.responses.GroupJoinResponse;
 import de.ceddyie.organizerbackend.service.GroupService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,14 +20,14 @@ public class GroupController {
     private GroupService groupService;
 
     @PostMapping
-    private ResponseEntity<?> createGroup(@AuthenticationPrincipal Long userId, @RequestBody GroupCreateRequest request) {
+    private ResponseEntity<GroupCreateResponse> createGroup(@AuthenticationPrincipal Long userId, @RequestBody GroupCreateRequest request) {
         log.info("User with ID {} creating a group with name {}", userId, request.name());
-        return groupService.createGroup(userId, request.name());
+        return ResponseEntity.ok(groupService.createGroup(userId, request.name()));
     }
 
     @PostMapping("/join")
-    private ResponseEntity<?> joinGroup(@AuthenticationPrincipal Long userId, @RequestBody GroupJoinRequest request) {
+    private ResponseEntity<GroupJoinResponse> joinGroup(@AuthenticationPrincipal Long userId, @RequestBody GroupJoinRequest request) {
         log.info("User with ID {} trying to join group with invite code {}", userId, request.inviteCode());
-        return groupService.joinGroup(userId, request.inviteCode());
+        return ResponseEntity.ok(groupService.joinGroup(userId, request.inviteCode()));
     }
 }
