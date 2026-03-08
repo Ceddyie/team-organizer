@@ -3,6 +3,7 @@ package de.ceddyie.organizerbackend.controller;
 import de.ceddyie.organizerbackend.dto.requests.GroupCreateRequest;
 import de.ceddyie.organizerbackend.dto.requests.GroupJoinRequest;
 import de.ceddyie.organizerbackend.dto.responses.GroupCreateResponse;
+import de.ceddyie.organizerbackend.dto.responses.GroupDetailResponse;
 import de.ceddyie.organizerbackend.dto.responses.GroupJoinResponse;
 import de.ceddyie.organizerbackend.dto.responses.GroupListResponseItem;
 import de.ceddyie.organizerbackend.service.GroupService;
@@ -38,5 +39,11 @@ public class GroupController {
     private ResponseEntity<List<GroupListResponseItem>> getGroups(@AuthenticationPrincipal Long userId) {
         log.info("User with ID {} requesting a list of his groups", userId);
         return ResponseEntity.ok(groupService.getGroups(userId));
+    }
+
+    @GetMapping("/{groupId}")
+    private ResponseEntity<GroupDetailResponse> getGroupById(@AuthenticationPrincipal Long userId, @PathVariable Long groupId) {
+        log.info("User with ID {} requests details of group with ID {}", userId, groupId);
+        return ResponseEntity.ok(groupService.getGroupById(userId, groupId));
     }
 }

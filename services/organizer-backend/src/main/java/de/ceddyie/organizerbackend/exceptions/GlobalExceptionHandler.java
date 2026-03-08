@@ -22,4 +22,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleConflict(ConflictException conflictException) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(conflictException.getMessage()));
     }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbidden(ForbiddenException forbiddenException) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(forbiddenException.getMessage()));
+    }
 }

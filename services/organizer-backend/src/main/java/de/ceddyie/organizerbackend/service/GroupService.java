@@ -1,10 +1,13 @@
 package de.ceddyie.organizerbackend.service;
 
+import de.ceddyie.organizerbackend.dto.GroupMemberDto;
 import de.ceddyie.organizerbackend.dto.responses.GroupCreateResponse;
 import de.ceddyie.organizerbackend.dto.GroupCreatorDto;
+import de.ceddyie.organizerbackend.dto.responses.GroupDetailResponse;
 import de.ceddyie.organizerbackend.dto.responses.GroupJoinResponse;
 import de.ceddyie.organizerbackend.dto.responses.GroupListResponseItem;
 import de.ceddyie.organizerbackend.exceptions.ConflictException;
+import de.ceddyie.organizerbackend.exceptions.ForbiddenException;
 import de.ceddyie.organizerbackend.exceptions.ResourceNotFoundException;
 import de.ceddyie.organizerbackend.exceptions.UnauthorizedException;
 import de.ceddyie.organizerbackend.model.Group;
@@ -19,8 +22,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class GroupService {
@@ -94,5 +95,26 @@ public class GroupService {
         return groupMemberRepository.findAllByUser(user).stream()
                 .map(gm -> GroupListResponseItem.from(gm.getGroup(), gm))
                 .toList();
+    }
+
+    public GroupDetailResponse getGroupById(Long userId, Long groupId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User is not logged in"));
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("No group with ID " + groupId));
+
+        if (!groupMemberRepository.existsByGroupAndUser(group, user)) throw new ForbiddenException("User " + userId + " is not member of group " + groupId);
+
+        List<GroupMemberDto> memberDtoList = group.getMembers().stream()
+                .map(gm -> new GroupMemberDto(
+                        gm.getUser().getId(),
+                        gm.getUser().getUsername(),
+                        gm.getUser().getAvatar(),
+                        gm.getJoinedAt()
+                ))
+                .toList();
+
+        return GroupDetailResponse.from(group, GroupCreatorDto.from(group.getCreatedBy()), memberDtoList);
     }
 }
