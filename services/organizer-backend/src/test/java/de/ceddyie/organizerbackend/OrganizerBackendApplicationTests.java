@@ -3,11 +3,14 @@ package de.ceddyie.organizerbackend;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 @SpringBootTest
 class OrganizerBackendApplicationTests {
 
     @Test
-    void contextLoads() {
+    void testSuiteRuns() {
+        assertTrue(true);
     }
 
 }

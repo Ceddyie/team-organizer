@@ -124,7 +124,7 @@ public class GroupService {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new ResourceNotFoundException("No group with ID " + groupId));
 
-        if (group.getCreatedBy() == user) throw new ForbiddenException("Creator can't leave his group");
+        if (group.getCreatedBy().getId().equals(user.getId())) throw new ForbiddenException("Creator can't leave his group");
 
         if (!groupMemberRepository.existsByGroupAndUser(group, user)) throw new ForbiddenException("User is no member of group");
 
@@ -141,7 +141,7 @@ public class GroupService {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new ResourceNotFoundException("No group with ID " + groupId));
 
-        if (group.getCreatedBy() != user) throw new ForbiddenException("User is not creator of group");
+        if (!group.getCreatedBy().getId().equals(user.getId())) throw new ForbiddenException("User is not creator of group");
 
         groupMemberRepository.deleteByGroup(group);
         groupRepository.deleteById(groupId);
@@ -163,8 +163,8 @@ public class GroupService {
         GroupMember groupMember = groupMemberRepository.findByGroupIdAndUserId(groupId, memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("No member found with ID " + memberId + " in group " + groupId));
 
-        if (group.getCreatedBy() != user) throw new ForbiddenException("User is not creator of group");
-        if (group.getCreatedBy() == groupMember.getUser()) throw new ForbiddenException("Creator of the group cannot be kicked");
+        if (!group.getCreatedBy().getId().equals(user.getId())) throw new ForbiddenException("User is not creator of group");
+        if (group.getCreatedBy().getId().equals(groupMember.getUser().getId())) throw new ForbiddenException("Creator of the group cannot be kicked");
 
         groupMemberRepository.deleteByGroupAndUser(group, member);
 

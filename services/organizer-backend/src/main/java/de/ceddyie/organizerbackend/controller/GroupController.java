@@ -15,7 +15,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/groups")
-@CrossOrigin(origins = "http:/localhost:5173/")
+@CrossOrigin(origins = "http://localhost:5173/")
 public class GroupController {
     @Autowired
     private GroupService groupService;
