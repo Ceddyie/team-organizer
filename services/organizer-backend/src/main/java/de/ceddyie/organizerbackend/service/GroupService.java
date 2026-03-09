@@ -132,4 +132,20 @@ public class GroupService {
 
         return new GroupLeaveResponse("Successfully left group");
     }
+
+    @Transactional
+    public GroupLeaveResponse deleteGroup(Long userId, Long groupId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User is not logged in"));
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("No group with ID " + groupId));
+
+        if (group.getCreatedBy() != user) throw new ForbiddenException("User is not creator of group");
+
+        groupMemberRepository.deleteByGroup(group);
+        groupRepository.deleteById(groupId);
+
+        return new GroupLeaveResponse("Successfully deleted group");
+    }
 }

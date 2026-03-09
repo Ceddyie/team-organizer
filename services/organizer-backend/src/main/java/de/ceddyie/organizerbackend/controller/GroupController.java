@@ -49,4 +49,10 @@ public class GroupController {
         log.info("User with ID {} requests to leave group with ID {}", userId, groupId);
         return ResponseEntity.ok(groupService.leaveGroup(userId, groupId));
     }
+
+    @DeleteMapping("/{groupId}")
+    private ResponseEntity<GroupLeaveResponse> deleteGroup(@AuthenticationPrincipal Long userId, @PathVariable Long groupId) {
+        log.info("User with ID {} requests to delete group {}", userId, groupId);
+        return ResponseEntity.ok(groupService.deleteGroup(userId, groupId));
+    }
 }
