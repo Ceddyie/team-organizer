@@ -1,10 +1,14 @@
 name: ci.yml
 on:
   push:
-    branches:
-      - main
-      - entwicklung
+    branches: [main, entwicklung]
+    paths:
+      - 'services/organizer-backend/**'
+      - '.github/workflows/ci.yml'
   pull_request:
+    branches: [main, entwicklung]
+    paths:
+      - 'services/organizer-backend/**'
 
 jobs:
   test:

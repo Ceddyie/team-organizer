@@ -194,5 +194,140 @@ class GroupServiceTest {
         assertThrows(ResourceNotFoundException.class,
                 () -> groupService.kickMember(creator.getId(), group.getId(), member.getId()));
     }
+
+    // --- Additional edge-case tests ---
+
+    @Test
+    void createGroup_throwsUnauthorized_whenUserNotFound() {
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(de.ceddyie.organizerbackend.exceptions.UnauthorizedException.class,
+                () -> groupService.createGroup(999L, "Ghost Group"));
+        verify(groupRepository, never()).save(any());
+    }
+
+    @Test
+    void joinGroup_throwsNotFound_whenInviteCodeInvalid() {
+        when(userRepository.findById(member.getId())).thenReturn(Optional.of(member));
+        when(groupRepository.findByInviteCode("INVALID1")).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> groupService.joinGroup(member.getId(), "INVALID1"));
+    }
+
+    @Test
+    void getGroups_returnsEmptyList_whenUserHasNoGroups() {
+        when(userRepository.findById(member.getId())).thenReturn(Optional.of(member));
+        when(groupMemberRepository.findAllByUser(member)).thenReturn(List.of());
+
+        var result = groupService.getGroups(member.getId());
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void getGroups_returnsMappedList() {
+        GroupMember gm = new GroupMember();
+        gm.setId(1L);
+        gm.setGroup(group);
+        gm.setUser(member);
+        gm.setJoinedAt(LocalDateTime.now());
+
+        when(userRepository.findById(member.getId())).thenReturn(Optional.of(member));
+        when(groupMemberRepository.findAllByUser(member)).thenReturn(List.of(gm));
+
+        var result = groupService.getGroups(member.getId());
+
+        assertEquals(1, result.size());
+        assertEquals("Weekend Trip", result.get(0).name());
+        assertEquals("ABCDEFGH", result.get(0).inviteCode());
+    }
+
+    @Test
+    void getGroupById_returnsDetailResponse_whenUserIsMember() {
+        GroupMember gm = new GroupMember();
+        gm.setId(1L);
+        gm.setGroup(group);
+        gm.setUser(creator);
+        gm.setJoinedAt(LocalDateTime.now());
+        group.getMembers().add(gm);
+
+        when(userRepository.findById(creator.getId())).thenReturn(Optional.of(creator));
+        when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
+        when(groupMemberRepository.existsByGroupAndUser(group, creator)).thenReturn(true);
+
+        GroupDetailResponse response = groupService.getGroupById(creator.getId(), group.getId());
+
+        assertEquals(group.getId(), response.id());
+        assertEquals("Weekend Trip", response.name());
+        assertEquals(creator.getUsername(), response.createdBy().username());
+        assertFalse(response.members().isEmpty());
+    }
+
+    @Test
+    void deleteGroup_throwsForbidden_whenNonCreatorTriesToDelete() {
+        when(userRepository.findById(member.getId())).thenReturn(Optional.of(member));
+        when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
+
+        assertThrows(ForbiddenException.class,
+                () -> groupService.deleteGroup(member.getId(), group.getId()));
+
+        verify(groupRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void leaveGroup_succeeds_whenNonCreatorLeaves() {
+        when(userRepository.findById(member.getId())).thenReturn(Optional.of(member));
+        when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
+        when(groupMemberRepository.existsByGroupAndUser(group, member)).thenReturn(true);
+
+        GroupLeaveResponse response = groupService.leaveGroup(member.getId(), group.getId());
+
+        assertEquals("Successfully left group", response.message());
+        verify(groupMemberRepository).deleteByGroupAndUser(group, member);
+    }
+
+    @Test
+    void leaveGroup_throwsForbidden_whenUserNotMember() {
+        when(userRepository.findById(member.getId())).thenReturn(Optional.of(member));
+        when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
+        when(groupMemberRepository.existsByGroupAndUser(group, member)).thenReturn(false);
+
+        assertThrows(ForbiddenException.class,
+                () -> groupService.leaveGroup(member.getId(), group.getId()));
+    }
+
+    @Test
+    void kickMember_throwsForbidden_whenNonCreatorTriesToKick() {
+        GroupMember storedMember = new GroupMember();
+        storedMember.setId(77L);
+        storedMember.setGroup(group);
+        storedMember.setUser(member);
+        storedMember.setJoinedAt(LocalDateTime.now());
+
+        when(userRepository.findById(member.getId())).thenReturn(Optional.of(member));
+        when(userRepository.findById(creator.getId())).thenReturn(Optional.of(creator));
+        when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
+        when(groupMemberRepository.findByGroupIdAndUserId(group.getId(), creator.getId())).thenReturn(Optional.of(storedMember));
+
+        assertThrows(ForbiddenException.class,
+                () -> groupService.kickMember(member.getId(), group.getId(), creator.getId()));
+    }
+
+    @Test
+    void kickMember_throwsForbidden_whenTryingToKickCreator() {
+        GroupMember creatorMembership = new GroupMember();
+        creatorMembership.setId(1L);
+        creatorMembership.setGroup(group);
+        creatorMembership.setUser(creator);
+        creatorMembership.setJoinedAt(LocalDateTime.now());
+
+        when(userRepository.findById(creator.getId())).thenReturn(Optional.of(creator));
+        when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
+        when(groupMemberRepository.findByGroupIdAndUserId(group.getId(), creator.getId())).thenReturn(Optional.of(creatorMembership));
+
+        assertThrows(ForbiddenException.class,
+                () -> groupService.kickMember(creator.getId(), group.getId(), creator.getId()));
+    }
 }
 
