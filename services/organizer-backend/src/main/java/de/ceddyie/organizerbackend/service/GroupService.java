@@ -148,4 +148,31 @@ public class GroupService {
 
         return new GroupLeaveResponse("Successfully deleted group");
     }
+
+    @Transactional
+    public GroupDetailResponse kickMember(Long userId, Long groupId, Long memberId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User is not logged in"));
+
+        User member = userRepository.findById(memberId)
+                .orElseThrow(() -> new ResourceNotFoundException("No user with ID " + memberId + " found"));
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("No group with ID " + groupId));
+
+        GroupMember groupMember = groupMemberRepository.findByGroupIdAndUserId(groupId, memberId)
+                .orElseThrow(() -> new ResourceNotFoundException("No member found with ID " + memberId + " in group " + groupId));
+
+        if (group.getCreatedBy() != user) throw new ForbiddenException("User is not creator of group");
+        if (group.getCreatedBy() == groupMember.getUser()) throw new ForbiddenException("Creator of the group cannot be kicked");
+
+        groupMemberRepository.deleteByGroupAndUser(group, member);
+
+        GroupCreatorDto creatorDto = GroupCreatorDto.from(group.getCreatedBy());
+
+        List<GroupMemberDto> memberDtoList = groupMemberRepository.findByGroup(group).stream()
+                .map(GroupMemberDto::from).toList();
+
+        return GroupDetailResponse.from(group, creatorDto, memberDtoList);
+    }
 }

@@ -6,7 +6,6 @@ import de.ceddyie.organizerbackend.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,11 +15,15 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> 
 
     List<GroupMember> findByUserIdAndGroupIdIn(Long userId, List<Long> groupIds);
 
-    List<Long> findByUserId(Long userId);
+    Optional<GroupMember> findByUserId(Long userId);
 
     List<GroupMember> findAllByUser(User user);
 
     void deleteByGroupAndUser(Group group, User user);
 
     void deleteByGroup(Group group);
+
+    List<GroupMember> findByGroup(Group group);
+
+    Optional<GroupMember> findByGroupIdAndUserId(Long groupId, Long memberId);
 }

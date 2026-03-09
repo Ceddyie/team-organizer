@@ -55,4 +55,10 @@ public class GroupController {
         log.info("User with ID {} requests to delete group {}", userId, groupId);
         return ResponseEntity.ok(groupService.deleteGroup(userId, groupId));
     }
+
+    @PatchMapping("/{groupId}/kick/{memberId}")
+    private ResponseEntity<GroupDetailResponse> kickMember(@AuthenticationPrincipal Long userId, @PathVariable Long groupId, @PathVariable Long memberId) {
+        log.info("User with ID {} requests to kick Member with ID {} from Group {}", userId, memberId, groupId);
+        return ResponseEntity.ok(groupService.kickMember(userId, groupId, memberId));
+    }
 }
