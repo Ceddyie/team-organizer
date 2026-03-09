@@ -1,11 +1,8 @@
 package de.ceddyie.organizerbackend.service;
 
 import de.ceddyie.organizerbackend.dto.GroupMemberDto;
-import de.ceddyie.organizerbackend.dto.responses.GroupCreateResponse;
+import de.ceddyie.organizerbackend.dto.responses.*;
 import de.ceddyie.organizerbackend.dto.GroupCreatorDto;
-import de.ceddyie.organizerbackend.dto.responses.GroupDetailResponse;
-import de.ceddyie.organizerbackend.dto.responses.GroupJoinResponse;
-import de.ceddyie.organizerbackend.dto.responses.GroupListResponseItem;
 import de.ceddyie.organizerbackend.exceptions.ConflictException;
 import de.ceddyie.organizerbackend.exceptions.ForbiddenException;
 import de.ceddyie.organizerbackend.exceptions.ResourceNotFoundException;
@@ -17,6 +14,7 @@ import de.ceddyie.organizerbackend.repository.GroupMemberRepository;
 import de.ceddyie.organizerbackend.repository.GroupRepository;
 import de.ceddyie.organizerbackend.repository.UserRepository;
 import de.ceddyie.organizerbackend.util.InviteCodeGenerator;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -116,5 +114,22 @@ public class GroupService {
                 .toList();
 
         return GroupDetailResponse.from(group, GroupCreatorDto.from(group.getCreatedBy()), memberDtoList);
+    }
+
+    @Transactional
+    public GroupLeaveResponse leaveGroup(Long userId, Long groupId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User is not logged in"));
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("No group with ID " + groupId));
+
+        if (group.getCreatedBy() == user) throw new ForbiddenException("Creator can't leave his group");
+
+        if (!groupMemberRepository.existsByGroupAndUser(group, user)) throw new ForbiddenException("User is no member of group");
+
+        groupMemberRepository.deleteByGroupAndUser(group, user);
+
+        return new GroupLeaveResponse("Successfully left group");
     }
 }

@@ -2,10 +2,7 @@ package de.ceddyie.organizerbackend.controller;
 
 import de.ceddyie.organizerbackend.dto.requests.GroupCreateRequest;
 import de.ceddyie.organizerbackend.dto.requests.GroupJoinRequest;
-import de.ceddyie.organizerbackend.dto.responses.GroupCreateResponse;
-import de.ceddyie.organizerbackend.dto.responses.GroupDetailResponse;
-import de.ceddyie.organizerbackend.dto.responses.GroupJoinResponse;
-import de.ceddyie.organizerbackend.dto.responses.GroupListResponseItem;
+import de.ceddyie.organizerbackend.dto.responses.*;
 import de.ceddyie.organizerbackend.service.GroupService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,5 +42,11 @@ public class GroupController {
     private ResponseEntity<GroupDetailResponse> getGroupById(@AuthenticationPrincipal Long userId, @PathVariable Long groupId) {
         log.info("User with ID {} requests details of group with ID {}", userId, groupId);
         return ResponseEntity.ok(groupService.getGroupById(userId, groupId));
+    }
+
+    @DeleteMapping("/{groupId}/leave")
+    private ResponseEntity<GroupLeaveResponse> leaveGroup(@AuthenticationPrincipal Long userId, @PathVariable Long groupId) {
+        log.info("User with ID {} requests to leave group with ID {}", userId, groupId);
+        return ResponseEntity.ok(groupService.leaveGroup(userId, groupId));
     }
 }
