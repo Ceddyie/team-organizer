@@ -1,8 +1,10 @@
 package de.ceddyie.organizerbackend.controller;
 
+import de.ceddyie.organizerbackend.dto.requests.EventCreateRequest;
 import de.ceddyie.organizerbackend.dto.requests.GroupCreateRequest;
 import de.ceddyie.organizerbackend.dto.requests.GroupJoinRequest;
 import de.ceddyie.organizerbackend.dto.responses.*;
+import de.ceddyie.organizerbackend.service.EventService;
 import de.ceddyie.organizerbackend.service.GroupService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,8 @@ import java.util.List;
 public class GroupController {
     @Autowired
     private GroupService groupService;
+    @Autowired
+    private EventService eventService;
 
     @PostMapping
     private ResponseEntity<GroupCreateResponse> createGroup(@AuthenticationPrincipal Long userId, @RequestBody GroupCreateRequest request) {
@@ -60,5 +64,11 @@ public class GroupController {
     private ResponseEntity<GroupDetailResponse> kickMember(@AuthenticationPrincipal Long userId, @PathVariable Long groupId, @PathVariable Long memberId) {
         log.info("User with ID {} requests to kick Member with ID {} from Group {}", userId, memberId, groupId);
         return ResponseEntity.ok(groupService.kickMember(userId, groupId, memberId));
+    }
+
+    @PostMapping("/{groupId}/events")
+    private ResponseEntity<EventCreateResponse> createEvent(@AuthenticationPrincipal Long userId, @PathVariable Long groupId, @RequestBody EventCreateRequest request) {
+        log.info("User with ID {} requests to create an event in group {}", userId, groupId);
+        return ResponseEntity.ok(eventService.createEvent(userId, groupId, request));
     }
 }

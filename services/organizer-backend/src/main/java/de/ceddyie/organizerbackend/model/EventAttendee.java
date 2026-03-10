@@ -31,4 +31,9 @@ public class EventAttendee {
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.status = AttendanceStatus.PENDING;
+    }
 }
