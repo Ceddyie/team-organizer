@@ -71,4 +71,10 @@ public class GroupController {
         log.info("User with ID {} requests to create an event in group {}", userId, groupId);
         return ResponseEntity.ok(eventService.createEvent(userId, groupId, request));
     }
+
+    @GetMapping("/{groupId}/events")
+    private ResponseEntity<List<EventListResponse>> getEventsOfGroup(@AuthenticationPrincipal Long userId, @PathVariable Long groupId) {
+        log.info("User with ID {} requests all events of group {}", userId, groupId);
+        return ResponseEntity.ok(eventService.getEventsOfGroup(userId, groupId));
+    }
 }

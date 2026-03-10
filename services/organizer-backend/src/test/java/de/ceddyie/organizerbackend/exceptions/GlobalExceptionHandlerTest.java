@@ -47,4 +47,12 @@ public class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
         assertEquals("forbidden", response.getBody().message());
     }
+
+    @Test
+    void handleBadRequest_returns400() {
+        ResponseEntity<ErrorResponse> response = handler.handleBadRequest(new BadRequestException("bad"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("bad", response.getBody().message());
+    }
 }
