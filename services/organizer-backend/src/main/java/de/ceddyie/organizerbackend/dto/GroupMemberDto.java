@@ -19,4 +19,13 @@ public record GroupMemberDto(
                 groupMember.getJoinedAt()
         );
     }
+
+    public static GroupMemberDto from(User user) {
+        return new GroupMemberDto(
+                user.getId(),
+                user.getUsername(),
+                user.getAvatar(),
+                user.getCreatedAt()
+        );
+    }
 }
