@@ -2,6 +2,7 @@ package de.ceddyie.organizerbackend.controller;
 
 import de.ceddyie.organizerbackend.dto.requests.EventCreateRequest;
 import de.ceddyie.organizerbackend.dto.responses.EventDetailResponse;
+import de.ceddyie.organizerbackend.dto.responses.GroupLeaveResponse;
 import de.ceddyie.organizerbackend.service.EventService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,13 @@ public class EventController {
 
     @PutMapping("/{eventId}")
     public ResponseEntity<EventDetailResponse> updateEvent(@AuthenticationPrincipal Long userId, @PathVariable Long eventId, @RequestBody EventCreateRequest request) {
-        log.info("User with ID {} reques to update event {}", userId, eventId);
+        log.info("User with ID {} requests to update event {}", userId, eventId);
         return ResponseEntity.ok(eventService.updateEvent(userId, eventId, request));
+    }
+
+    @DeleteMapping("/{eventId}")
+    public ResponseEntity<GroupLeaveResponse> deleteEvent(@AuthenticationPrincipal Long userId, @PathVariable Long eventId) {
+        log.info("User with ID {} requests to delete event {}", userId, eventId);
+        return ResponseEntity.ok(eventService.deleteEvent(userId, eventId));
     }
 }
