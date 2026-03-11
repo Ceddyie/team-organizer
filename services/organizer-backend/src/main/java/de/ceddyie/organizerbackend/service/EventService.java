@@ -1,9 +1,12 @@
 package de.ceddyie.organizerbackend.service;
 
+import de.ceddyie.organizerbackend.dto.AttendanceListDto;
 import de.ceddyie.organizerbackend.dto.AttendanceSummaryDto;
+import de.ceddyie.organizerbackend.dto.EventGroupDto;
 import de.ceddyie.organizerbackend.dto.GroupCreatorDto;
 import de.ceddyie.organizerbackend.dto.requests.EventCreateRequest;
 import de.ceddyie.organizerbackend.dto.responses.EventCreateResponse;
+import de.ceddyie.organizerbackend.dto.responses.EventDetailResponse;
 import de.ceddyie.organizerbackend.dto.responses.EventListResponse;
 import de.ceddyie.organizerbackend.enums.AttendanceStatus;
 import de.ceddyie.organizerbackend.exceptions.BadRequestException;
@@ -97,5 +100,22 @@ public class EventService {
         return eventRepository.findAllByGroupId(groupId).stream()
                 .map(e -> EventListResponse.from(e, getAttendanceSummary(e.getId()), status(userId, e.getId())))
                 .toList();
+    }
+
+    public EventDetailResponse getEventDetails(Long userId, Long eventId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User is not logged in"));
+
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event does not exist"));
+
+        if (!groupMemberRepository.existsByGroupAndUser(event.getGroup(), user)) throw new ForbiddenException("User is not member of group");
+
+        EventGroupDto eventGroupDto = EventGroupDto.from(event.getGroup());
+        GroupCreatorDto groupCreatorDto = GroupCreatorDto.from(event.getCreatedBy());
+        List<AttendanceListDto> attendanceListDtos = attendanceRepository.findAllByEventId(eventId).stream()
+                .map(AttendanceListDto::from).toList();
+
+        return EventDetailResponse.from(event, eventGroupDto, groupCreatorDto, attendanceListDtos, getAttendanceSummary(eventId));
     }
 }
