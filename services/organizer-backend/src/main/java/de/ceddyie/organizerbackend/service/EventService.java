@@ -9,10 +9,7 @@ import de.ceddyie.organizerbackend.dto.responses.EventCreateResponse;
 import de.ceddyie.organizerbackend.dto.responses.EventDetailResponse;
 import de.ceddyie.organizerbackend.dto.responses.EventListResponse;
 import de.ceddyie.organizerbackend.enums.AttendanceStatus;
-import de.ceddyie.organizerbackend.exceptions.BadRequestException;
-import de.ceddyie.organizerbackend.exceptions.ForbiddenException;
-import de.ceddyie.organizerbackend.exceptions.ResourceNotFoundException;
-import de.ceddyie.organizerbackend.exceptions.UnauthorizedException;
+import de.ceddyie.organizerbackend.exceptions.*;
 import de.ceddyie.organizerbackend.model.*;
 import de.ceddyie.organizerbackend.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -117,5 +114,31 @@ public class EventService {
                 .map(AttendanceListDto::from).toList();
 
         return EventDetailResponse.from(event, eventGroupDto, groupCreatorDto, attendanceListDtos, getAttendanceSummary(eventId));
+    }
+
+    public EventDetailResponse updateEvent(Long userId, Long eventId, EventCreateRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User is not logged in"));
+
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event does not exist"));
+
+        if (!groupMemberRepository.existsByGroupAndUser(event.getGroup(), user)) throw new ForbiddenException("User is not member of group");
+        if (!event.getCreatedBy().getId().equals(user.getId()) || !event.getGroup().getCreatedBy().getId().equals(user.getId())) throw new ForbiddenException("User is not creator of event or group");
+        if (request.startTime().isBefore(LocalDateTime.now()) || request.minAttendees() <= 0) throw new ConflictException("Values are not valid");
+
+        event.setTitle(request.title());
+        event.setStartTime(request.startTime());
+        event.setType(request.type());
+        event.setMinAttendees(request.minAttendees());
+        event.setDescription(request.description());
+
+        Event savedEvent = eventRepository.save(event);
+        EventGroupDto eventGroupDto = EventGroupDto.from(savedEvent.getGroup());
+        GroupCreatorDto groupCreatorDto = GroupCreatorDto.from(savedEvent.getCreatedBy());
+        List<AttendanceListDto> attendanceListDtos = attendanceRepository.findAllByEventId(savedEvent.getId()).stream()
+                .map(AttendanceListDto::from).toList();
+
+        return EventDetailResponse.from(savedEvent, eventGroupDto, groupCreatorDto, attendanceListDtos, getAttendanceSummary(savedEvent.getId()));
     }
 }

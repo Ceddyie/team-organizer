@@ -1,5 +1,6 @@
 package de.ceddyie.organizerbackend.controller;
 
+import de.ceddyie.organizerbackend.dto.requests.EventCreateRequest;
 import de.ceddyie.organizerbackend.dto.responses.EventDetailResponse;
 import de.ceddyie.organizerbackend.service.EventService;
 import lombok.extern.slf4j.Slf4j;
@@ -20,5 +21,11 @@ public class EventController {
     public ResponseEntity<EventDetailResponse> getEventDetails(@AuthenticationPrincipal Long userId, @PathVariable Long eventId) {
         log.info("User with ID {} requests details of event {}", userId, eventId);
         return ResponseEntity.ok(eventService.getEventDetails(userId, eventId));
+    }
+
+    @PutMapping("/{eventId}")
+    public ResponseEntity<EventDetailResponse> updateEvent(@AuthenticationPrincipal Long userId, @PathVariable Long eventId, @RequestBody EventCreateRequest request) {
+        log.info("User with ID {} reques to update event {}", userId, eventId);
+        return ResponseEntity.ok(eventService.updateEvent(userId, eventId, request));
     }
 }
