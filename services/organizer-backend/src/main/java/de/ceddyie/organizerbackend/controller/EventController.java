@@ -2,6 +2,7 @@ package de.ceddyie.organizerbackend.controller;
 
 import de.ceddyie.organizerbackend.dto.requests.AttendanceRequest;
 import de.ceddyie.organizerbackend.dto.requests.EventCreateRequest;
+import de.ceddyie.organizerbackend.dto.responses.AttendanceDetailResponse;
 import de.ceddyie.organizerbackend.dto.responses.AttendanceResponse;
 import de.ceddyie.organizerbackend.dto.responses.EventDetailResponse;
 import de.ceddyie.organizerbackend.dto.responses.GroupLeaveResponse;
@@ -45,5 +46,11 @@ public class EventController {
     public ResponseEntity<AttendanceResponse> updateAttendance(@AuthenticationPrincipal Long userId, @PathVariable Long eventId, @RequestBody AttendanceRequest request) {
         log.info("User with ID {} requests to update his status for event {}", userId, eventId);
         return ResponseEntity.ok(attendanceService.updateAttendance(userId, eventId, request));
+    }
+
+    @GetMapping("/{eventId}/attendance")
+    public ResponseEntity<AttendanceDetailResponse> getEventAttendance(@AuthenticationPrincipal Long userId, @PathVariable Long eventId) {
+        log.info("User with ID {} requests details of attendances for event {}", userId, eventId);
+        return ResponseEntity.ok(attendanceService.getEventAttendance(userId, eventId));
     }
 }
