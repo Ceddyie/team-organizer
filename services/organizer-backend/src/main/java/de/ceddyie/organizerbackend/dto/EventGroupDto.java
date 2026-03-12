@@ -1,5 +1,6 @@
 package de.ceddyie.organizerbackend.dto;
 
+import de.ceddyie.organizerbackend.model.Event;
 import de.ceddyie.organizerbackend.model.Group;
 
 public record EventGroupDto(
@@ -10,6 +11,13 @@ public record EventGroupDto(
         return new EventGroupDto(
                 group.getId(),
                 group.getName()
+        );
+    }
+
+    public static EventGroupDto from(Event event) {
+        return new EventGroupDto(
+                event.getId(),
+                event.getTitle()
         );
     }
 }
