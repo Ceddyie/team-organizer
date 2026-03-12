@@ -1,8 +1,11 @@
 package de.ceddyie.organizerbackend.controller;
 
+import de.ceddyie.organizerbackend.dto.requests.AttendanceRequest;
 import de.ceddyie.organizerbackend.dto.requests.EventCreateRequest;
+import de.ceddyie.organizerbackend.dto.responses.AttendanceResponse;
 import de.ceddyie.organizerbackend.dto.responses.EventDetailResponse;
 import de.ceddyie.organizerbackend.dto.responses.GroupLeaveResponse;
+import de.ceddyie.organizerbackend.service.AttendanceService;
 import de.ceddyie.organizerbackend.service.EventService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 public class EventController {
     @Autowired
     private EventService eventService;
+    @Autowired
+    private AttendanceService attendanceService;
 
     @GetMapping("/{eventId}")
     public ResponseEntity<EventDetailResponse> getEventDetails(@AuthenticationPrincipal Long userId, @PathVariable Long eventId) {
@@ -34,5 +39,11 @@ public class EventController {
     public ResponseEntity<GroupLeaveResponse> deleteEvent(@AuthenticationPrincipal Long userId, @PathVariable Long eventId) {
         log.info("User with ID {} requests to delete event {}", userId, eventId);
         return ResponseEntity.ok(eventService.deleteEvent(userId, eventId));
+    }
+
+    @PostMapping("/{eventId}/attendance")
+    public ResponseEntity<AttendanceResponse> updateAttendance(@AuthenticationPrincipal Long userId, @PathVariable Long eventId, @RequestBody AttendanceRequest request) {
+        log.info("User with ID {} requests to update his status for event {}", userId, eventId);
+        return ResponseEntity.ok(attendanceService.updateAttendance(userId, eventId, request));
     }
 }
