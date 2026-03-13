@@ -1,6 +1,7 @@
 package de.ceddyie.organizerbackend.service;
 
 import de.ceddyie.organizerbackend.dto.GroupMemberDto;
+import de.ceddyie.organizerbackend.dto.requests.GroupCreateRequest;
 import de.ceddyie.organizerbackend.dto.responses.*;
 import de.ceddyie.organizerbackend.dto.GroupCreatorDto;
 import de.ceddyie.organizerbackend.exceptions.ConflictException;
@@ -44,15 +45,16 @@ public class GroupService {
         );
     }
 
-    public GroupCreateResponse createGroup(Long userId, String name) {
+    public GroupCreateResponse createGroup(Long userId, GroupCreateRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UnauthorizedException("User is not logged in"));
 
         Group newGroup = new Group();
-        newGroup.setName(name);
+        newGroup.setName(request.name());
         newGroup.setCreatedBy(user);
         newGroup.setCreatedAt(LocalDateTime.now());
         newGroup.setInviteCode(generateInviteCode());
+        newGroup.setDiscordWebhookUrl(request.discordWebhookUrl());
 
         GroupMember founderMember = new GroupMember();
         founderMember.setGroup(newGroup);
@@ -84,6 +86,23 @@ public class GroupService {
         groupMemberRepository.save(newMember);
 
         return GroupJoinResponse.from(group, newMember);
+    }
+
+    public GroupCreateResponse updateGroup(Long userId, Long groupId, GroupCreateRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User is not logged in"));
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("Group does not exist"));
+
+        if (!group.getCreatedBy().getId().equals(user.getId())) throw new UnauthorizedException("User is not creator of group");
+
+        group.setName(request.name());
+        group.setDiscordWebhookUrl(request.discordWebhookUrl());
+
+        Group updatedGroup = groupRepository.save(group);
+
+        return GroupCreateResponse.from(updatedGroup, GroupCreatorDto.from(group.getCreatedBy()));
     }
 
     public List<GroupListResponseItem> getGroups(Long userId) {
