@@ -27,13 +27,19 @@ public class GroupController {
     @PostMapping
     private ResponseEntity<GroupCreateResponse> createGroup(@AuthenticationPrincipal Long userId, @RequestBody GroupCreateRequest request) {
         log.info("User with ID {} creating a group with name {}", userId, request.name());
-        return ResponseEntity.ok(groupService.createGroup(userId, request.name()));
+        return ResponseEntity.ok(groupService.createGroup(userId, request));
     }
 
     @PostMapping("/join")
     private ResponseEntity<GroupJoinResponse> joinGroup(@AuthenticationPrincipal Long userId, @RequestBody GroupJoinRequest request) {
         log.info("User with ID {} trying to join group with invite code {}", userId, request.inviteCode());
         return ResponseEntity.ok(groupService.joinGroup(userId, request.inviteCode()));
+    }
+
+    @PutMapping("/{groupId}")
+    private ResponseEntity<GroupCreateResponse> updateGroup(@AuthenticationPrincipal Long userId, @PathVariable Long groupId, @RequestBody GroupCreateRequest request) {
+        log.info("User with ID {} trying to update group {}", userId, groupId);
+        return ResponseEntity.ok(groupService.updateGroup(userId, groupId, request));
     }
 
     @GetMapping

@@ -56,12 +56,13 @@ public class GroupControllerTest {
         var now = LocalDateTime.now();
         var creatorDto = new GroupCreatorDto(1L, "ceddy");
         var response = new GroupCreateResponse(10L, "CS Team", "ABCD1234", now, creatorDto, 1);
+        var request = new GroupCreateRequest("CS Team", "discord webhook test");
 
-        when(groupService.createGroup(1L, "CS Team")).thenReturn(response);
+        when(groupService.createGroup(1L, request)).thenReturn(response);
 
         mockMvc.perform(post("/api/groups")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new GroupCreateRequest("CS Team"))))
+                        .content(objectMapper.writeValueAsString(new GroupCreateRequest("CS Team", "discord webhook test"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(10))
                 .andExpect(jsonPath("$.name").value("CS Team"))
@@ -69,7 +70,7 @@ public class GroupControllerTest {
                 .andExpect(jsonPath("$.memberCount").value(1))
                 .andExpect(jsonPath("$.createdBy.username").value("ceddy"));
 
-        verify(groupService).createGroup(1L, "CS Team");
+        verify(groupService).createGroup(1L, request);
     }
 
     @Test

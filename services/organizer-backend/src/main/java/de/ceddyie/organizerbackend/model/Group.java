@@ -30,6 +30,9 @@ public class Group {
     @JoinColumn(name = "created_by_user_id", nullable = false)
     private User createdBy;
 
+    @Column(name = "discord_webhook_url")
+    private String discordWebhookUrl;
+
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<GroupMember> members = new HashSet<>();
 

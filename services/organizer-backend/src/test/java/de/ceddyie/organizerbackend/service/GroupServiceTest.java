@@ -1,5 +1,6 @@
 package de.ceddyie.organizerbackend.service;
 
+import de.ceddyie.organizerbackend.dto.requests.GroupCreateRequest;
 import de.ceddyie.organizerbackend.dto.responses.GroupCreateResponse;
 import de.ceddyie.organizerbackend.dto.responses.GroupDetailResponse;
 import de.ceddyie.organizerbackend.dto.responses.GroupJoinResponse;
@@ -70,6 +71,7 @@ class GroupServiceTest {
 
     @Test
     void createGroup_createsFounderAndReturnsResponse() {
+        var request = new GroupCreateRequest("Trip Planners", "discord");
         when(userRepository.findById(creator.getId())).thenReturn(Optional.of(creator));
         when(groupRepository.existsByInviteCode(anyString())).thenReturn(false);
         when(groupRepository.save(any(Group.class))).thenAnswer(invocation -> {
@@ -80,7 +82,7 @@ class GroupServiceTest {
             return savedGroup;
         });
 
-        GroupCreateResponse response = groupService.createGroup(creator.getId(), "Trip Planners");
+        GroupCreateResponse response = groupService.createGroup(creator.getId(), request);
 
         assertEquals(99L, response.id());
         assertEquals("Trip Planners", response.name());
@@ -199,10 +201,11 @@ class GroupServiceTest {
 
     @Test
     void createGroup_throwsUnauthorized_whenUserNotFound() {
+        var request = new GroupCreateRequest("Ghost Group", "discord");
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(de.ceddyie.organizerbackend.exceptions.UnauthorizedException.class,
-                () -> groupService.createGroup(999L, "Ghost Group"));
+                () -> groupService.createGroup(999L, request));
         verify(groupRepository, never()).save(any());
     }
 

@@ -31,6 +31,8 @@ public class EventService {
     private EventRepository eventRepository;
     @Autowired
     private AttendanceRepository attendanceRepository;
+    @Autowired
+    private DiscordNotificationService discordNotificationService;
 
     private AttendanceSummaryDto getAttendanceSummary(Long id) {
         int accepted = attendanceRepository.countByEventIdAndStatus(id, AttendanceStatus.ACCEPTED);
@@ -82,6 +84,8 @@ public class EventService {
         attendanceRepository.saveAll(attendees);
 
         AttendanceSummaryDto attendanceSummaryDto = getAttendanceSummary(savedEvent.getId());
+
+        discordNotificationService.notifyEventCreated(group, savedEvent);
 
         return EventCreateResponse.from(savedEvent, GroupCreatorDto.from(savedEvent.getCreatedBy()), attendanceSummaryDto);
     }
@@ -140,6 +144,8 @@ public class EventService {
         List<AttendanceListDto> attendanceListDtos = attendanceRepository.findAllByEventId(savedEvent.getId()).stream()
                 .map(AttendanceListDto::from).toList();
 
+        discordNotificationService.notifyEventUpdated(savedEvent.getGroup(), savedEvent);
+
         return EventDetailResponse.from(savedEvent, eventGroupDto, groupCreatorDto, attendanceListDtos, getAttendanceSummary(savedEvent.getId()));
     }
 
@@ -154,6 +160,8 @@ public class EventService {
         if (!event.getCreatedBy().getId().equals(user.getId()) || !event.getGroup().getCreatedBy().getId().equals(user.getId())) throw new ForbiddenException("User is not creator of event or group");
 
         eventRepository.deleteById(eventId);
+
+        discordNotificationService.notifyEventCancelled(event.getGroup(), event);
 
         return new GroupLeaveResponse("Event deleted successfully!");
     }
