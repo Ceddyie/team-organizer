@@ -1,15 +1,20 @@
 package de.ceddyie.organizerbackend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.ceddyie.organizerbackend.dto.AttendanceSummaryDto;
 import de.ceddyie.organizerbackend.dto.GroupCreatorDto;
 import de.ceddyie.organizerbackend.dto.GroupMemberDto;
+import de.ceddyie.organizerbackend.dto.requests.EventCreateRequest;
 import de.ceddyie.organizerbackend.dto.requests.GroupCreateRequest;
 import de.ceddyie.organizerbackend.dto.requests.GroupJoinRequest;
 import de.ceddyie.organizerbackend.dto.responses.*;
+import de.ceddyie.organizerbackend.enums.AttendanceStatus;
+import de.ceddyie.organizerbackend.enums.EventType;
 import de.ceddyie.organizerbackend.exceptions.ConflictException;
 import de.ceddyie.organizerbackend.exceptions.ForbiddenException;
 import de.ceddyie.organizerbackend.exceptions.GlobalExceptionHandler;
 import de.ceddyie.organizerbackend.exceptions.ResourceNotFoundException;
+import de.ceddyie.organizerbackend.service.EventService;
 import de.ceddyie.organizerbackend.service.GroupService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,7 +29,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -37,6 +44,9 @@ public class GroupControllerTest {
 
     @Mock
     private GroupService groupService;
+
+    @Mock
+    private EventService eventService;
 
     @InjectMocks
     private GroupController groupController;
@@ -207,5 +217,67 @@ public class GroupControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.members", hasSize(1)))
                 .andExpect(jsonPath("$.members[0].username").value("ceddy"));
+    }
+
+    @Test
+    void updateGroup_returnsOkWithResponse() throws Exception {
+        var now = LocalDateTime.now();
+        var creatorDto = new GroupCreatorDto(1L, "ceddy");
+        var request = new GroupCreateRequest("New Name", "https://webhook");
+        var response = new GroupCreateResponse(10L, "New Name", "ABCD1234", now, creatorDto, 1);
+
+        when(groupService.updateGroup(eq(1L), eq(10L), any(GroupCreateRequest.class))).thenReturn(response);
+
+        mockMvc.perform(put("/api/groups/10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("New Name"));
+    }
+
+    @Test
+    void createEvent_returnsOkWithResponse() throws Exception {
+        var futureTime = LocalDateTime.now().plusDays(7);
+        var now = LocalDateTime.now();
+        var request = new EventCreateRequest("CS Match", futureTime, EventType.SINGLE, 5, "Match");
+        var creatorDto = new GroupCreatorDto(1L, "ceddy");
+        var summary = new AttendanceSummaryDto(0, 0, 0, 2);
+        var response = new EventCreateResponse(100L, "CS Match", futureTime, EventType.SINGLE, 5, "Match", 10L, creatorDto, now, summary);
+
+        when(eventService.createEvent(eq(1L), eq(10L), any(EventCreateRequest.class))).thenReturn(response);
+
+        mockMvc.perform(post("/api/groups/10/events")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(100))
+                .andExpect(jsonPath("$.title").value("CS Match"))
+                .andExpect(jsonPath("$.groupId").value(10));
+    }
+
+    @Test
+    void getEventsOfGroup_returnsList() throws Exception {
+        var futureTime = LocalDateTime.now().plusDays(7);
+        var summary = new AttendanceSummaryDto(3, 0, 1, 1);
+        var events = List.of(
+                new EventListResponse(100L, "CS Match", futureTime, EventType.SINGLE, 5, 10L, summary, AttendanceStatus.ACCEPTED)
+        );
+
+        when(eventService.getEventsOfGroup(1L, 10L)).thenReturn(events);
+
+        mockMvc.perform(get("/api/groups/10/events"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].title").value("CS Match"))
+                .andExpect(jsonPath("$[0].myStatus").value("ACCEPTED"));
+    }
+
+    @Test
+    void getEventsOfGroup_returns403_whenNotMember() throws Exception {
+        when(eventService.getEventsOfGroup(1L, 10L))
+                .thenThrow(new ForbiddenException("User is not member of group"));
+
+        mockMvc.perform(get("/api/groups/10/events"))
+                .andExpect(status().isForbidden());
     }
 }
