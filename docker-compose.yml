@@ -9,11 +9,33 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - teamorg-network
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U dev -d teamorg" ]
       interval: 5s
       timeout: 3s
       retries: 5
 
+  backend:
+    build:
+      context: ./services/organizer-backend
+      dockerfile: Dockerfile
+    container_name: teamorg-backend
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/teamorg
+    depends_on:
+      - postgres
+    networks:
+      - teamorg-network
+
 volumes:
   postgres_data:
+
+networks:
+  teamorg-network:
+    driver: bridge
