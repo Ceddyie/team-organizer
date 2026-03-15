@@ -96,6 +96,48 @@ class GroupServiceTest {
     }
 
     @Test
+    void updateGroup_updatesNameAndWebhook() {
+        var request = new GroupCreateRequest("New Name", "https://new-webhook");
+        when(userRepository.findById(creator.getId())).thenReturn(Optional.of(creator));
+        when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
+        when(groupRepository.save(any(Group.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        GroupCreateResponse response = groupService.updateGroup(creator.getId(), group.getId(), request);
+
+        assertEquals("New Name", response.name());
+        verify(groupRepository).save(group);
+    }
+
+    @Test
+    void updateGroup_throwsUnauthorized_whenUserNotFound() {
+        var request = new GroupCreateRequest("New Name", null);
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(de.ceddyie.organizerbackend.exceptions.UnauthorizedException.class,
+                () -> groupService.updateGroup(999L, group.getId(), request));
+    }
+
+    @Test
+    void updateGroup_throwsNotFound_whenGroupNotFound() {
+        var request = new GroupCreateRequest("New Name", null);
+        when(userRepository.findById(creator.getId())).thenReturn(Optional.of(creator));
+        when(groupRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> groupService.updateGroup(creator.getId(), 999L, request));
+    }
+
+    @Test
+    void updateGroup_throwsUnauthorized_whenNotCreator() {
+        var request = new GroupCreateRequest("New Name", null);
+        when(userRepository.findById(member.getId())).thenReturn(Optional.of(member));
+        when(groupRepository.findById(group.getId())).thenReturn(Optional.of(group));
+
+        assertThrows(de.ceddyie.organizerbackend.exceptions.UnauthorizedException.class,
+                () -> groupService.updateGroup(member.getId(), group.getId(), request));
+    }
+
+    @Test
     void joinGroup_throwsConflict_whenUserAlreadyMember() {
         when(userRepository.findById(member.getId())).thenReturn(Optional.of(member));
         when(groupRepository.findByInviteCode("ABCDEFGH")).thenReturn(Optional.of(group));
