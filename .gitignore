@@ -3,3 +3,4 @@
 !.env.example
 *.properties
 !application.properties
+!application-prod.properties
